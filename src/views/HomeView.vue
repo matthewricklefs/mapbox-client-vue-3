@@ -1,14 +1,165 @@
 <template>
-  <div class="home">
-    <h1 class="bg-red-200">Hello from Home View</h1>
+  <div class="h-screen relative">
+    <GeoErrorModal
+      v-if="geoError"
+      :geoErrorMsg="geoErrorMsg"
+      @closeGeoError="closeGeoError"
+    />
+
+    <MapFeatures
+      :fetchCoords="fetchCoords"
+      :coords="coords"
+      @getGeolocation="getGeolocation"
+      @plotResult="plotResult"
+    />
+    <div id="mapid" class="h-full z-[1]"></div>
   </div>
 </template>
 
 <script>
-// @ is an alias to /src
+import leaflet from "leaflet";
+import { onMounted, ref } from "vue";
+import GeoErrorModal from "../components/GeoErrorModal.vue";
+import MapFeatures from "../components/MapFeatures.vue";
 
 export default {
   name: "HomeView",
-  components: {},
+  components: {
+    GeoErrorModal,
+    MapFeatures,
+  },
+  setup() {
+    let map;
+    onMounted(() => {
+      // init map
+      map = leaflet
+        .map("mapid", {
+          zoomControl: false,
+        })
+        .setView([28.538336, -81.379234], 10);
+      // add tile layers
+      leaflet
+        .tileLayer(
+          `https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=${process.env.VUE_APP_API_KEY}`,
+          {
+            maxZoom: 18,
+            id: "mapbox/streets-v11",
+            tileSize: 512,
+            zoomOffset: -1,
+            accessToken: process.env.VUE_APP_API_KEY,
+          }
+        )
+        .addTo(map);
+
+      // get users location
+      getGeolocation();
+    });
+
+    const coords = ref(null);
+    const fetchCoords = ref(null);
+    const geoMarker = ref(null);
+    const geoError = ref(null);
+    const geoErrorMsg = ref(null);
+
+    const getGeolocation = () => {
+      if (coords.value) {
+        coords.value = null;
+        sessionStorage.removeItem("coords");
+        map.removeLayer(geoMarker.value);
+        return;
+      }
+      // check session storage for coords
+      if (sessionStorage.getItem("coords")) {
+        coords.value = JSON.parse(sessionStorage.getItem("coords"));
+        plotGeolocation(coords.value);
+        return;
+      }
+
+      fetchCoords.value = true;
+      navigator.geolocation.getCurrentPosition(setCoords, getLocError);
+    };
+
+    const setCoords = (position) => {
+      // stop fetching Coords
+      fetchCoords.value = null;
+
+      // set coordinates in session storage
+      const setSessionCoords = {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+      };
+
+      sessionStorage.setItem("coords", JSON.stringfy(setSessionCoords));
+
+      // set ref coords value
+      coords.value = setSessionCoords;
+
+      // set leaflet location on the map
+      plotGeolocation(coords.value);
+    };
+
+    const getLocError = (err) => {
+      fetchCoords.value = null;
+      geoError.value = true;
+      geoErrorMsg.value = err.message;
+    };
+
+    const plotGeolocation = (coords) => {
+      // create custom marker
+      const customMarker = leaflet.icon({
+        iconUrl: require("../assets/map-marker-red.svg"),
+        iconSize: [35, 35],
+      });
+
+      // create new marker with coords and custom icon
+      geoMarker.value = leaflet
+        .marker([coords.lat, coords.lng], {
+          icon: customMarker,
+        })
+        .addTo(map);
+
+      // set map view to current location;
+      map.setView([coords.lat, coords.lng], 10);
+    };
+
+    const closeGeoError = () => {
+      geoError.value = null;
+      geoErrorMsg.value = null;
+    };
+
+    const resultMarker = ref(null);
+    const plotResult = (coords) => {
+      // does the resultMarker have value?
+      if (resultMarker.value) {
+        map.removeLayer(resultMarker.value);
+      }
+
+      // create custom marker
+      const customMarker = leaflet.icon({
+        iconUrl: require("../assets/map-marker-blue.svg"),
+        iconSize: [35, 35],
+      });
+
+      // create new marker with coords and custom icon
+      resultMarker.value = leaflet
+        .marker([coords.coordinates[1], coords.coordinates[0]], {
+          icon: customMarker,
+        })
+        .addTo(map);
+
+      // set map view to current location;
+      map.setView([coords.coordinates[1], coords.coordinates[0]], 10);
+    };
+
+    return {
+      coords,
+      fetchCoords,
+      geoMarker,
+      geoError,
+      geoErrorMsg,
+      closeGeoError,
+      plotResult,
+    };
+  },
 };
 </script>
