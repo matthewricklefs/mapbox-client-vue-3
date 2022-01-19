@@ -9,9 +9,12 @@
     <MapFeatures
       :fetchCoords="fetchCoords"
       :coords="coords"
+      :searchResults="searchResults"
       @getGeolocation="getGeolocation"
       @plotResult="plotResult"
+      @toggleSearchResults="toggleSearchResults"
     />
+
     <div id="mapid" class="h-full z-[1]"></div>
   </div>
 </template>
@@ -51,6 +54,10 @@ export default {
         )
         .addTo(map);
 
+      map.on("moveend", () => {
+        closeSearchResults();
+      });
+
       // get users location
       getGeolocation();
     });
@@ -79,17 +86,17 @@ export default {
       navigator.geolocation.getCurrentPosition(setCoords, getLocError);
     };
 
-    const setCoords = (position) => {
+    const setCoords = (pos) => {
       // stop fetching Coords
       fetchCoords.value = null;
 
       // set coordinates in session storage
       const setSessionCoords = {
-        lat: position.coords.latitude,
-        lng: position.coords.longitude,
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
       };
 
-      sessionStorage.setItem("coords", JSON.stringfy(setSessionCoords));
+      sessionStorage.setItem("coords", JSON.stringify(setSessionCoords));
 
       // set ref coords value
       coords.value = setSessionCoords;
@@ -148,7 +155,16 @@ export default {
         .addTo(map);
 
       // set map view to current location;
-      map.setView([coords.coordinates[1], coords.coordinates[0]], 10);
+      map.setView([coords.coordinates[1], coords.coordinates[0]], 14);
+    };
+
+    const searchResults = ref(null);
+    const toggleSearchResults = () => {
+      searchResults.value = !searchResults.value;
+    };
+
+    const closeSearchResults = () => {
+      searchResults.value = null;
     };
 
     return {
@@ -159,6 +175,9 @@ export default {
       geoErrorMsg,
       closeGeoError,
       plotResult,
+      searchResults,
+      toggleSearchResults,
+      closeSearchResults,
     };
   },
 };
