@@ -13,6 +13,7 @@
       @getGeolocation="getGeolocation"
       @plotResult="plotResult"
       @toggleSearchResults="toggleSearchResults"
+      @removeResults="removeResults"
     />
 
     <div id="mapid" class="h-full z-[1]"></div>
@@ -167,17 +168,22 @@ export default {
       searchResults.value = null;
     };
 
+    const removeResult = () => {
+      map.removeLayer(resultMarker.value);
+    };
+
     return {
       coords,
       fetchCoords,
       geoMarker,
       geoError,
       geoErrorMsg,
+      searchResults,
       closeGeoError,
       plotResult,
-      searchResults,
       toggleSearchResults,
       closeSearchResults,
+      removeResult,
     };
   },
 };
