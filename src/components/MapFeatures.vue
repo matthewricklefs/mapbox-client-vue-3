@@ -135,10 +135,9 @@ export default {
           });
 
           const getData = await axios.get(
-            `http://localhost:3000/api/search/${searchQuery.value}?${params}`
+            `api/search/${searchQuery.value}?${params}`
           );
           searchData.value = getData.data.features;
-          console.log(searchData.value);
         }
       }, 750);
     };
