@@ -7,13 +7,13 @@
     />
 
     <MapFeatures
-      :fetchCoords="fetchCoords"
       :coords="coords"
+      :fetchCoords="fetchCoords"
       :searchResults="searchResults"
       @getGeolocation="getGeolocation"
       @plotResult="plotResult"
       @toggleSearchResults="toggleSearchResults"
-      @removeResults="removeResults"
+      @removeResult="removeResult"
     />
 
     <div id="mapid" class="h-full z-[1]"></div>
@@ -21,8 +21,8 @@
 </template>
 
 <script>
-import leaflet from "leaflet";
 import { onMounted, ref } from "vue";
+import leaflet from "leaflet";
 import GeoErrorModal from "../components/GeoErrorModal.vue";
 import MapFeatures from "../components/MapFeatures.vue";
 
